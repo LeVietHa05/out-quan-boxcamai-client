@@ -3,9 +3,9 @@ import subprocess
 import numpy as np
 from multiprocessing import Process, Queue, Event
 import argparse
-import client.config as config
-from client.detection import detection_process
-from client.sender import start_send_thread, stop_send_thread_func
+import config
+from detection import detection_process
+from sender import start_send_thread, stop_send_thread_func
 
 def video_capture_process(q, stop_event, source):
     if config.VIDEO_FILE_PATH:
@@ -36,6 +36,22 @@ def video_capture_process(q, stop_event, source):
                     ret, frame = cap.read()
                     if not ret:
                         print("RTSP stream ended.")
+                        break
+                    if frame is not None and not q.full():
+                        q.put(frame)
+            finally:
+                cap.release()
+        elif source == 'webcam':
+            # Use OpenCV to read from local webcam
+            cap = cv2.VideoCapture(0)
+            if not cap.isOpened():
+                print("Error: Could not open webcam")
+                return
+            try:
+                while not stop_event.is_set():
+                    ret, frame = cap.read()
+                    if not ret:
+                        print("Webcam capture ended.")
                         break
                     if frame is not None and not q.full():
                         q.put(frame)
@@ -81,28 +97,32 @@ def main():
     parser.add_argument('--video', type=str, help='Path to video file for testing')
     parser.add_argument('--rtsp', action='store_true', help='Use RTSP stream for video')
     parser.add_argument('--rpicam', action='store_true', help='Use rpicam for video')
+    parser.add_argument('--webcam', action='store_true', help='Use local webcam for video')
+    parser.add_argument('--display', action='store_true', help='Display detection results in a window')
     args = parser.parse_args()
 
     not_sent = args.not_sent
 
     # Determine video source
-    if args.rtsp:
+    if args.webcam:
+        source = 'webcam'
+    elif args.rtsp:
         source = 'rtsp'
     elif args.rpicam:
         source = 'rpicam'
     else:
         source = 'rpicam'  # default
 
-    # Start background sending thread
-    if not not_sent:
-        start_send_thread()
+    # Note: Sender thread will be started in the detection process
+    # if not not_sent:
+    #     start_send_thread()
 
     # Create queue for inter-process communication
     frame_queue = Queue(maxsize=10)
     stop_event = Event()
 
     # Start detection process
-    detection_proc = Process(target=detection_process, args=(frame_queue, stop_event, not_sent))
+    detection_proc = Process(target=detection_process, args=(frame_queue, stop_event, not_sent, args.display))
     detection_proc.start()
 
     # Override config if video file specified via args
@@ -127,8 +147,9 @@ def main():
         stop_event.set()
         capture_proc.join(timeout=5)
         detection_proc.join(timeout=5)
-        if not not_sent:
-            stop_send_thread_func()
+        # Note: Sender thread cleanup is now handled in detection process
+        # if not not_sent:
+        #     stop_send_thread_func()
         print("Detection client stopped")
 
 if __name__ == '__main__':

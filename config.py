@@ -1,9 +1,9 @@
 import os
 
 # Server Configuration
-SERVER_HOST = '0.0.0.0'
+SERVER_HOST = '172.16.1.217'
 SERVER_PORT = 5000
-SERVER_URL = f"http://{SERVER_HOST}:{SERVER_PORT}/detect"
+SERVER_URL = f"http://{SERVER_HOST}:{SERVER_PORT}/api/detections"
 
 # Database Configuration
 # DATABASE_URL = 'sqlite:///server/detections.db' # no need the db in client
@@ -31,11 +31,11 @@ VIDEO_FILE_PATH = None # e.g., 'path/to/video.mp4'
 # VIDEO_FILE_PATH = './videotest/video-test-2.mp4' # e.g., 'path/to/video.mp4'
 
 # RTSP Configuration
-RTSP_URL = "rtsp://admin:quan2004@192.168.1.100:554/cam/realmonitor?channel=1&subtype=1"
+RTSP_URL = "rtsp://admin:quan2004@172.16.1.245:554/cam/realmonitor?channel=1&subtype=1"
 #go lai rtsv vao day la oke
 # Model Configuration
-# MODEL_PATH = 'yolov5s.onnx'
-MODEL_PATH = 'best.onnx'
+MODEL_PATH = 'yolov5s.onnx'
+# MODEL_PATH = 'best.onnx'
 INPUT_W_SIZE = 320
 INPUT_H_SIZE = 320
 INPUT_SIZE = 320

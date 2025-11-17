@@ -3,7 +3,7 @@ import json
 import threading
 from multiprocessing import Queue, Event
 import time
-import client.config as config
+import config 
 import os
 
 # Global queue and thread for asynchronous sending
@@ -14,10 +14,10 @@ stop_send_thread = Event()
 def send_detection_to_server(detection_data):
     """Add detection data to queue for asynchronous sending"""
     # Add client information to detection data
-    import client.config as config
-    detection_data['client_name'] = getattr(config, 'CLIENT_NAME', 'default_client')
-    detection_data['client_latitude'] = getattr(config, 'CLIENT_LATITUDE', None)
-    detection_data['client_longitude'] = getattr(config, 'CLIENT_LONGITUDE', None)
+    
+    detection_data['client_name'] = config.CLIENT_NAME 
+    detection_data['client_latitude'] = config.CLIENT_LATITUDE 
+    detection_data['client_longitude'] = config.CLIENT_LONGITUDE 
 
     detection_queue.put(detection_data)
 
@@ -52,6 +52,7 @@ def send_worker():
                     print(f"Detection sent successfully: {detection_data['class_name']}")
                 else:
                     print(f"Failed to send detection: HTTP {response.status_code}")
+                    print(f"{response.json()}")
             except requests.exceptions.RequestException as e:
                 print(f"Error sending detection: {e}")
 

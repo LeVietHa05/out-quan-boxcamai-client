@@ -2,7 +2,7 @@ import cv2
 import os
 from datetime import datetime
 import numpy as np
-import client.config as config
+import config as config
 
 def save_detection_image(frame, class_name, score, bbox, timestamp):
     """Save a cropped image of the detected object to disk"""
