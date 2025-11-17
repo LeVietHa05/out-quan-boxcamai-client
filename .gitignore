@@ -57,3 +57,7 @@ htmlcov/
 
 # Node modules (if any frontend build tools)
 node_modules/
+
+
+# video test
+videotest/
