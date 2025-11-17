@@ -1,7 +1,7 @@
 import os
 
 # Server Configuration
-SERVER_HOST = '172.16.1.217'
+SERVER_HOST = '172.16.30.217'
 SERVER_PORT = 5000
 SERVER_URL = f"http://{SERVER_HOST}:{SERVER_PORT}/api/detections"
 
@@ -14,9 +14,10 @@ SERVER_IMAGES_DIR = os.path.join(os.path.dirname(__file__),  'captured_images') 
 MAX_IMAGES_PER_DETECTION = 5  # Maximum images to keep per detection class
 
 # Detection Configuration
-DETECTION_THRESHOLD = 0.35
-IOU_THRESHOLD = 0.45
-FRAME_SKIP = 5
+DETECTION_THRESHOLD = 0.7
+IOU_THRESHOLD = 0.3
+FRAME_SKIP = 1
+TIME_BETWEEN_SEND = 2.0
 
 # Objects to track (empty list means track all detected objects)
 TRACKED_OBJECTS = ['person', 'car', 'truck', 'bus', 'motorbike']  # ['person', 'car', 'truck', 'bus', 'motorbike']

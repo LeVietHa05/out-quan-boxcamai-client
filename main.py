@@ -6,6 +6,8 @@ import argparse
 import config
 from detection import detection_process
 from sender import start_send_thread, stop_send_thread_func
+import requests
+
 
 def video_capture_process(q, stop_event, source):
     if config.VIDEO_FILE_PATH:
@@ -90,18 +92,59 @@ def video_capture_process(q, stop_event, source):
                 proc.terminate()
                 proc.wait()
 
+
+def get_info():
+    try:
+        response = requests.get(
+            f'http://{config.SERVER_HOST}:{config.SERVER_PORT}/api/clients/by-name/{config.CLIENT_NAME}',
+            timeout=10
+        )
+        if response.status_code == 200:
+            return response.json()
+        else:
+            print(f"Failed to get client info: HTTP {response.status_code}")
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"Error getting client info: {e}")
+        return None
+
 def main():
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Object Detection Client')
-    parser.add_argument('--not-sent', action='store_true', help='Run without sending detections to server')
-    parser.add_argument('--video', type=str, help='Path to video file for testing')
-    parser.add_argument('--rtsp', action='store_true', help='Use RTSP stream for video')
-    parser.add_argument('--rpicam', action='store_true', help='Use rpicam for video')
-    parser.add_argument('--webcam', action='store_true', help='Use local webcam for video')
-    parser.add_argument('--display', action='store_true', help='Display detection results in a window')
+    parser.add_argument('--not-sent', action='store_true',
+                        help='Run without sending detections to server')
+    parser.add_argument('--video', type=str,
+                        help='Path to video file for testing')
+    parser.add_argument('--rtsp', action='store_true',
+                        help='Use RTSP stream for video')
+    parser.add_argument('--rpicam', action='store_true',
+                        help='Use rpicam for video')
+    parser.add_argument('--webcam', action='store_true',
+                        help='Use local webcam for video')
+    parser.add_argument('--display', action='store_true',
+                        help='Display detection results in a window')
     args = parser.parse_args()
 
     not_sent = args.not_sent
+
+    # Get client info from server
+    client_info = get_info()
+    if client_info:
+        print(f"Client info retrieved: {client_info}")
+        is_detect_enabled = client_info.get('is_detect_enabled', True)
+        roi_x1 = client_info.get('roi_x1')
+        roi_y1 = client_info.get('roi_y1')
+        roi_x2 = client_info.get('roi_x2')
+        roi_y2 = client_info.get('roi_y2')
+
+        # Override not_sent based on server setting
+        if not is_detect_enabled:
+            not_sent = True
+            print("Detection disabled by server")
+    else:
+        print("Could not retrieve client info, using default settings")
+        is_detect_enabled = True
+        roi_x1 = roi_y1 = roi_x2 = roi_y2 = None
 
     # Determine video source
     if args.webcam:
@@ -122,7 +165,8 @@ def main():
     stop_event = Event()
 
     # Start detection process
-    detection_proc = Process(target=detection_process, args=(frame_queue, stop_event, not_sent, args.display))
+    detection_proc = Process(target=detection_process, args=(
+        frame_queue, stop_event, not_sent, args.display, roi_x1, roi_y1, roi_x2, roi_y2))
     detection_proc.start()
 
     # Override config if video file specified via args
@@ -130,7 +174,8 @@ def main():
         config.VIDEO_FILE_PATH = args.video
 
     # Start video capture process
-    capture_proc = Process(target=video_capture_process, args=(frame_queue, stop_event, source))
+    capture_proc = Process(target=video_capture_process,
+                           args=(frame_queue, stop_event, source))
     capture_proc.start()
 
     try:
@@ -151,6 +196,7 @@ def main():
         # if not not_sent:
         #     stop_send_thread_func()
         print("Detection client stopped")
+
 
 if __name__ == '__main__':
     main()
