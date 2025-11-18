@@ -1,5 +1,6 @@
 import cv2
 import subprocess
+import sys
 import numpy as np
 from multiprocessing import Process, Queue, Event
 import argparse
@@ -28,6 +29,9 @@ def video_capture_process(q, stop_event, source):
             cap.release()
     else:
         if source == 'rtsp':
+            # make sure there is cam ip
+            if ip_address is None and config.RTSP_IP is None:
+                restart_service()
             # Use OpenCV to read from RTSP stream
             rtspLink = f"rtsp://{config.RTSP_USER}:{config.RTSP_PASS}@{ip_address if not config.RTSP_IP else config.RTSP_IP}:{config.RTSP_PORT}/cam/realmonitor?channel=1&subtype=1"
             cap = cv2.VideoCapture(rtspLink)
@@ -104,10 +108,92 @@ def get_info():
             return response.json()
         else:
             print(f"Failed to get client info: HTTP {response.status_code}")
+            print(f"Trying to create new client")
+            create_new_client()
+            # restart after this to get new cam ip
+            restart_service()
             return None
     except requests.exceptions.RequestException as e:
         print(f"Error getting client info: {e}")
         return None
+
+
+def create_new_client():
+    """if get info response code is not 200, then no client found, so create a new one"""
+    try:
+
+        response = requests.post(
+            f'http://{config.SERVER_HOST}:{config.SERVER_PORT}/api/clients/by-name/{config.CLIENT_NAME}',
+            timeout=10,
+            json={
+                "name": config.CLIENT_NAME,
+            }
+        )
+        if response.status_code == 201:
+            print("Create new client done.")
+            return None
+        elif response.status_code == 400:
+            print("Client's name not found, change it in config.py.")
+            stop_service()
+        elif response.status_code == 409:
+            print("Client's is USED, change it to another in config.py.")
+            stop_service()
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to create new client: {e}")
+        return None
+
+
+def stop_service():
+    try:
+        print("🔄 STOPPING boxcamai service...")
+
+        res = subprocess.run(
+            ['sudo', 'systemctl', 'stop', 'boxcamai'],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+
+        if res.returncode == 0:
+            print("✅ Service boxcamai stopped successfully")
+            sys.exit(0)  # ✅ Thoát thành công
+        else:
+            print(f"❌ Failed to stop service: {res.stderr}")
+            sys.exit(1)  # ✅ Thoát với lỗi (vì restart thất bại)
+
+    except subprocess.TimeoutExpired:
+        print("❌ Timeout when stopping service")
+        sys.exit(1)
+    except Exception as e:
+        print(f"❌ Error stopping service: {e}")
+        sys.exit(1)
+
+
+def restart_service():
+    """Restart service và thoát clean"""
+    try:
+        print("🔄 Restarting boxcamai service...")
+
+        res = subprocess.run(
+            ['sudo', 'systemctl', 'restart', 'boxcamai'],
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+
+        if res.returncode == 0:
+            print("✅ Service boxcamai restarted successfully")
+            sys.exit(0)  # ✅ Thoát thành công
+        else:
+            print(f"❌ Failed to restart service: {res.stderr}")
+            sys.exit(1)  # ✅ Thoát với lỗi (vì restart thất bại)
+
+    except subprocess.TimeoutExpired:
+        print("❌ Timeout when restarting service")
+        sys.exit(1)
+    except Exception as e:
+        print(f"❌ Error restarting service: {e}")
+        sys.exit(1)
 
 
 def main():
