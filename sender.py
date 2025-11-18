@@ -43,7 +43,7 @@ def send_worker():
                     files = {'image': (detection_data['image_path'], img_file, 'image/jpeg')}
                     data = {'json_data': json.dumps(detection_data)}
                     response = requests.post(
-                        f'http://{config.SERVER_HOST}:{config.SERVER_PORT}/api/detections',
+                        f'https://{config.SERVER_HOST}:{config.SERVER_PORT}/api/detections',
                         files=files,
                         data=data,
                         timeout=10
@@ -52,7 +52,7 @@ def send_worker():
                     print(f"Detection sent successfully: {detection_data['class_name']}")
                 else:
                     print(f"Failed to send detection: HTTP {response.status_code}")
-                    print(f"{response.json()}")
+                    print(f"error: {response.json().error}")
             except requests.exceptions.RequestException as e:
                 print(f"Error sending detection: {e}")
 

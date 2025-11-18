@@ -2,8 +2,8 @@ import os
 
 # Server Configuration
 SERVER_HOST = 'boxcamai.cloud'
-SERVER_PORT = 80
-SERVER_URL = f"http://{SERVER_HOST}:{SERVER_PORT}/api/detections"
+SERVER_PORT = 443
+SERVER_URL = f"https://{SERVER_HOST}:{SERVER_PORT}/api/detections"
 
 # Database Configuration
 # DATABASE_URL = 'sqlite:///server/detections.db' # no need the db in client

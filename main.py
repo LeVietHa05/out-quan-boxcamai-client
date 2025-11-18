@@ -31,6 +31,7 @@ def video_capture_process(q, stop_event, source):
         if source == 'rtsp':
             # make sure there is cam ip
             if ip_address is None and config.RTSP_IP is None:
+                print("no cam detected")
                 restart_service()
             # Use OpenCV to read from RTSP stream
             rtspLink = f"rtsp://{config.RTSP_USER}:{config.RTSP_PASS}@{ip_address if not config.RTSP_IP else config.RTSP_IP}:{config.RTSP_PORT}/cam/realmonitor?channel=1&subtype=1"
@@ -101,7 +102,7 @@ def video_capture_process(q, stop_event, source):
 def get_info():
     try:
         response = requests.get(
-            f'http://{config.SERVER_HOST}:{config.SERVER_PORT}/api/clients/by-name/{config.CLIENT_NAME}',
+            f'https://{config.SERVER_HOST}:{config.SERVER_PORT}/api/clients/by-name/{config.CLIENT_NAME}',
             timeout=10
         )
         if response.status_code == 200:
@@ -110,8 +111,6 @@ def get_info():
             print(f"Failed to get client info: HTTP {response.status_code}")
             print(f"Trying to create new client")
             create_new_client()
-            # restart after this to get new cam ip
-            restart_service()
             return None
     except requests.exceptions.RequestException as e:
         print(f"Error getting client info: {e}")
@@ -123,14 +122,16 @@ def create_new_client():
     try:
 
         response = requests.post(
-            f'http://{config.SERVER_HOST}:{config.SERVER_PORT}/api/clients/by-name/{config.CLIENT_NAME}',
+            f'https://{config.SERVER_HOST}:{config.SERVER_PORT}/api/clients',
             timeout=10,
             json={
                 "name": config.CLIENT_NAME,
+                "is_detect_enabled": True
             }
         )
         if response.status_code == 201:
             print("Create new client done.")
+            restart_service()
             return None
         elif response.status_code == 400:
             print("Client's name not found, change it in config.py.")
@@ -138,8 +139,13 @@ def create_new_client():
         elif response.status_code == 409:
             print("Client's is USED, change it to another in config.py.")
             stop_service()
+        else:
+            print(
+                f"some thing worng {response.status_code} - {response.json()}")
+            stop_service()
     except requests.exceptions.RequestException as e:
         print(f"Failed to create new client: {e}")
+        stop_service()
         return None
 
 
