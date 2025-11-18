@@ -1,8 +1,8 @@
 import os
 
 # Server Configuration
-SERVER_HOST = '172.16.30.217'
-SERVER_PORT = 5000
+SERVER_HOST = 'boxcamai.cloud'
+SERVER_PORT = 80
 SERVER_URL = f"http://{SERVER_HOST}:{SERVER_PORT}/api/detections"
 
 # Database Configuration
