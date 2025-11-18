@@ -29,7 +29,8 @@ def video_capture_process(q, stop_event, source):
     else:
         if source == 'rtsp':
             # Use OpenCV to read from RTSP stream
-            cap = cv2.VideoCapture(config.RTSP_URL)
+            rtspLink = f"rtsp://{config.RTSP_USER}:{config.RTSP_PASS}@{ip_address if not config.RTSP_IP else config.RTSP_IP}:{config.RTSP_PORT}/cam/realmonitor?channel=1&subtype=1"
+            cap = cv2.VideoCapture(rtspLink)
             if not cap.isOpened():
                 print(f"Error: Could not open RTSP stream {config.RTSP_URL}")
                 return
@@ -108,6 +109,7 @@ def get_info():
         print(f"Error getting client info: {e}")
         return None
 
+
 def main():
     # Parse command line arguments
     parser = argparse.ArgumentParser(description='Object Detection Client')
@@ -136,6 +138,8 @@ def main():
         roi_y1 = client_info.get('roi_y1')
         roi_x2 = client_info.get('roi_x2')
         roi_y2 = client_info.get('roi_y2')
+        global ip_address
+        ip_address = client_info.get('ip_address')
 
         # Override not_sent based on server setting
         if not is_detect_enabled:

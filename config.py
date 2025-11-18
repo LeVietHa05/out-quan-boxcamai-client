@@ -32,6 +32,10 @@ VIDEO_FILE_PATH = None # e.g., 'path/to/video.mp4'
 # VIDEO_FILE_PATH = './videotest/video-test-2.mp4' # e.g., 'path/to/video.mp4'
 
 # RTSP Configuration
+RTSP_USER = 'admin'
+RTSP_PASS = 'quan2004'
+RTSP_IP = None
+RTSP_PORT = '554'
 RTSP_URL = "rtsp://admin:quan2004@172.16.1.245:554/cam/realmonitor?channel=1&subtype=1"
 #go lai rtsv vao day la oke
 # Model Configuration
